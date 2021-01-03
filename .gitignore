@@ -1,0 +1,15 @@
+# dist
+/dist/
+
+# dependencies
+/node_modules/
+
+# environment
+.env
+
+# lock files
+yarn.lock
+package-lock.json
+
+# files (for local testing)
+**/*.pdf
