@@ -6,16 +6,9 @@ import { toPromise } from "./toPromise";
 export type Config = {
   sourceDir: string;
   outDir: string;
-  iterations?: number;
-  interval?: number;
 };
 
 type Options = { config: Config };
-
-const DefaultConfig = {
-  iterations: 20,
-  interval: 5
-};
 
 export type Type = {
   identifier: RegExp | ((fileName: string) => boolean);
@@ -29,7 +22,7 @@ export class FileRenamer {
   defaultType?: Omit<Type, "identifier">;
 
   constructor(options: Options) {
-    this.config = { ...DefaultConfig, ...options.config };
+    this.config = options.config;
     this.types = [];
   }
 
@@ -64,8 +57,6 @@ export class FileRenamer {
       moveFileToOutDir(self, name, newName);
     }
   }
-
-  listen() {}
 }
 
 function readSourceFiles(renamer: FileRenamer) {
