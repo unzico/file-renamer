@@ -1,2 +1,2 @@
 export { FileRenamer } from "./FileRenamer";
-export type { Type, Config } from "./FileRenamer";
+export type { Config, DefaultType, Type } from "./FileRenamer";
