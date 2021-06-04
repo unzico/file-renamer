@@ -7,17 +7,14 @@ import { toPromise } from "./toPromise";
 export type Config = {
   inputDir: string;
   outputDir: string;
-  defaultType?: DefaultType;
+  defaultType?: Type;
   types: Type[];
 };
 
-export type DefaultType = {
+export type Type = {
   title?: string;
-  parser: (fileName: string) => string | Promise<string>;
-};
-
-export type Type = DefaultType & {
   identifier: RegExp | ((fileName: string) => boolean);
+  parser: (fileName: string) => string | Promise<string>;
 };
 
 export class FileRenamer {
