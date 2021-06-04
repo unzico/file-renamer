@@ -1,13 +1,13 @@
-import chalk from "chalk";
+import { green, yellow } from "kleur";
 
 export function log(msg: string) {
   console.log(msg);
 }
 
 export function success(msg: string) {
-  console.log(chalk.green(msg));
+  console.log(green(msg));
 }
 
 export function warning(msg: string) {
-  console.warn(chalk.yellow(msg));
+  console.warn(yellow(msg));
 }

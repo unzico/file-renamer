@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import { bold } from "kleur";
 import fs from "fs";
 import path from "path";
 import * as Logger from "./logger";
@@ -81,5 +81,5 @@ function moveFileToOutputDir(
   const outputPath = path.resolve(config.outputDir, newName);
 
   fs.renameSync(inputPath, outputPath);
-  Logger.success(`Renamed ${chalk.bold(oldName)} to ${chalk.bold(newName)}.`);
+  Logger.success(`Renamed ${bold(oldName)} to ${bold(newName)}.`);
 }
