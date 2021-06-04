@@ -1,16 +1,18 @@
 import chalk from "chalk";
 import fs from "fs";
 import path from "path";
+import * as Logger from "./logger";
 import { toPromise } from "./toPromise";
 
 export type Config = {
-  sourceDir: string;
-  outDir: string;
+  inputDir: string;
+  outputDir: string;
+  defaultType?: Type;
+  types: Type[];
 };
 
-type Options = { config: Config };
-
 export type Type = {
+  title?: string;
   identifier: RegExp | ((fileName: string) => boolean);
   parser: (fileName: string) => string | Promise<string>;
   message?: string;
@@ -18,56 +20,45 @@ export type Type = {
 
 export class FileRenamer {
   config: Config;
-  types: Type[];
-  defaultType?: Omit<Type, "identifier">;
 
-  constructor(options: Options) {
-    this.config = options.config;
-    this.types = [];
-  }
-
-  set(types: Type[]) {
-    this.types = types;
-  }
-
-  setDefault(type: NonNullable<FileRenamer["defaultType"]>) {
-    this.defaultType = type;
-  }
-
-  add(type: Type) {
-    this.types = [...this.types, type];
+  constructor(config: Config) {
+    this.config = config;
   }
 
   /**
-   * Runs the renamer once.
+   * Renames all files in the `config.inputDir`, if possible.
+   * @param fileName If specified, only this file will be renamed if it exists.
    */
-  async run(fileName?: string) {
+  async renameAll(fileName?: string) {
     const self = this;
     const fileNames = fileName ? [fileName] : readSourceFiles(this);
     const jobs = fileNames.map((name) => toPromise<string>(name));
+    const { defaultType } = this.config;
 
     for await (const name of jobs) {
-      const type = identifyType(this, name) ?? this.defaultType;
+      let type = identifyType(self, name) ?? defaultType;
 
       if (!type) {
+        Logger.warning(`Could not identify ${fileName}. Skipping.`);
         return;
       }
 
       const newName = await type.parser(name);
-      moveFileToOutDir(self, name, newName);
+      moveFileToOutputDir(self, name, newName);
     }
   }
 }
 
 function readSourceFiles(renamer: FileRenamer) {
-  return fs.readdirSync(path.resolve(renamer.config.sourceDir));
+  return fs.readdirSync(path.resolve(renamer.config.inputDir));
 }
 
 function identifyType(renamer: FileRenamer, fileName: string) {
+  const { types } = renamer.config;
   let identifier: Type["identifier"];
   let identified = false;
 
-  for (const type of renamer.types) {
+  for (const type of types) {
     identifier = type.identifier;
     identified = isRegex(identifier)
       ? identifier.test(fileName)
@@ -81,16 +72,14 @@ function isRegex(value: any): value is RegExp {
   return value instanceof RegExp;
 }
 
-function moveFileToOutDir(
-  renamer: FileRenamer,
-  prevName: string,
+function moveFileToOutputDir(
+  { config }: FileRenamer,
+  oldName: string,
   newName: string
 ) {
-  const srcPath = path.resolve(renamer.config.sourceDir, prevName);
-  const outPath = path.resolve(renamer.config.outDir, newName);
-  fs.renameSync(srcPath, outPath);
+  const inputPath = path.resolve(config.inputDir, oldName);
+  const outputPath = path.resolve(config.outputDir, newName);
 
-  console.log(
-    chalk.green(`Renamed ${chalk.bold(prevName)} to ${chalk.bold(newName)}.`)
-  );
+  fs.renameSync(inputPath, outputPath);
+  Logger.success(`Renamed ${chalk.bold(oldName)} to ${chalk.bold(newName)}.`);
 }
