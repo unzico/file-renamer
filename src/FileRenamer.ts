@@ -24,26 +24,28 @@ export class FileRenamer {
     this.config = config;
   }
 
-  /**
-   * Renames all files in the `config.inputDir`, if possible.
-   * @param fileName If specified, only this file will be renamed if it exists.
-   */
-  async renameAll(fileName?: string) {
-    const self = this;
-    const fileNames = fileName ? [fileName] : readSourceFiles(this);
-    const jobs = fileNames.map((name) => toPromise<string>(name));
+  async rename(fileName: string) {
     const { defaultType } = this.config;
+    let type = identifyType(this, fileName) ?? defaultType;
+
+    if (!type) {
+      Logger.warning(`Could not identify ${fileName}. Skipping.`);
+      return;
+    }
+
+    const newName = await type.parser(fileName);
+    moveFileToOutputDir(this, fileName, newName);
+  }
+
+  /**
+   * Renames all files placed in the `config.inputDir` directory.
+   */
+  async renameAll() {
+    const fileNames = readSourceFiles(this);
+    const jobs = fileNames.map((name) => toPromise<string>(name));
 
     for await (const name of jobs) {
-      let type = identifyType(self, name) ?? defaultType;
-
-      if (!type) {
-        Logger.warning(`Could not identify ${fileName}. Skipping.`);
-        return;
-      }
-
-      const newName = await type.parser(name);
-      moveFileToOutputDir(self, name, newName);
+      await this.rename(name);
     }
   }
 }
@@ -77,9 +79,10 @@ function moveFileToOutputDir(
   newName: string
 ) {
   const ext = path.extname(oldName);
+  const finalName = newName + ext;
   const inputPath = path.resolve(config.inputDir, oldName);
-  const outputPath = path.resolve(config.outputDir, newName + ext);
+  const outputPath = path.resolve(config.outputDir, finalName + ext);
 
   fs.renameSync(inputPath, outputPath);
-  Logger.success(`Renamed ${bold(oldName)} to ${bold(newName)}.`);
+  Logger.success(`Renamed ${bold(oldName)} to ${bold(finalName)}.`);
 }
