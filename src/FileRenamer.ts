@@ -76,8 +76,9 @@ function moveFileToOutputDir(
   oldName: string,
   newName: string
 ) {
+  const ext = path.extname(oldName);
   const inputPath = path.resolve(config.inputDir, oldName);
-  const outputPath = path.resolve(config.outputDir, newName);
+  const outputPath = path.resolve(config.outputDir, newName + ext);
 
   fs.renameSync(inputPath, outputPath);
   Logger.success(`Renamed ${bold(oldName)} to ${bold(newName)}.`);
